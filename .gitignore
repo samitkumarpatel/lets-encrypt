@@ -1,0 +1,3 @@
+cert/**
+cert/tmp
+cert/tmp/**

@@ -6,30 +6,26 @@
 docker run --rm certbot/certbot -h all
 ```
 
-### Generate certificate [In test mode]
-```sh
-docker run -it --rm \                                                                                                                                       125 ↵
-  -v $(pwd):/etc/letsencrypt \
-  -v $(pwd):/var/lib/letsencrypt \
-  certbot/certbot certonly --test-cert --no-eff-email\
-  --manual \
-  --preferred-challenges dns \
-  -d "*.my-school.online" -d "my-school.online" \
-  --agree-tos \
-  -m xxxxxxx@gmail.com
-```
-
-### Generate certificate non-interactive  [In test mode]
+### Generate ssl/tls from let's encrypt staging env in non-interactive way.
 
 ```sh
-docker run -it --rm \                                                                                                                                         1 ↵
-  -v $(pwd):/etc/letsencrypt \
-  -v $(pwd):/var/lib/letsencrypt \
-  certbot/certbot certonly -n --test-cert --no-eff-email\
+
+docker run --rm -it \
+  -v $(pwd)/cert:/etc/letsencrypt \
+  -v $(pwd)/cert:/var/lib/letsencrypt \
+  -v $(pwd)/cert/log:/var/log \
+  -v $(pwd)/hook/add-txt.sh:/add-txt.sh \
+  -v $(pwd)/hook/remove-txt.sh:/remove-txt.sh \
+  certbot/certbot certonly \
+  --test-cert \
   --manual \
+  --manual-auth-hook "/add-txt.sh" \
+  --manual-cleanup-hook "/remove-txt.sh" \
   --preferred-challenges dns \
-  -d "*.my-school.online" -d "my-school.online" \
+  -d "*.my-school.online" \
   --agree-tos \
-  -m xxxxxxxx@gmail.com
+  --no-eff-email \
+  -m xxxxxx@gmail.com \
+  -n
+
 ```
-> PluginError('An authentication script must be provided with --manual-auth-hook when using the manual plugin non-interactively.')

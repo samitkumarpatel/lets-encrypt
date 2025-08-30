@@ -30,6 +30,10 @@ docker run --rm -it \
   -v $(pwd)/cert/log:/var/log \
   -v $(pwd)/hook/add-txt.sh:/add-txt.sh \
   -v $(pwd)/hook/remove-txt.sh:/remove-txt.sh \
+  -e ARM_CLIENT_ID=$ARM_CLIENT_ID \
+  -e ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET \
+  -e ARM_TENANT_ID=$ARM_TENANT_ID \
+  -e ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID \
   certbot/certbot certonly \
   --test-cert \
   --manual \
@@ -41,5 +45,36 @@ docker run --rm -it \
   --no-eff-email \
   -m xxxxxx@gmail.com \
   -n
+
+```
+
+### Add a TXT record in azure dns zone
+
+```sh
+export ARM_CLIENT_ID="xxxxxx"
+export ARM_CLIENT_SECRET="xxxxxxx"
+export ARM_TENANT_ID="xxxxxxxxxxxxxxxxxxxxxx"
+export ARM_SUBSCRIPTION_ID="xxxxxxxxxxxxxxxxxxxx"
+
+accessToken=$(curl -X POST "https://login.microsoftonline.com/$ARM_TENANT_ID/oauth2/v2.0/token" \
+     -H "Content-Type: application/x-www-form-urlencoded" \
+     -d "client_id=$ARM_CLIENT_ID&scope=https://management.azure.com/.default&client_secret=$ARM_CLIENT_SECRET&grant_type=client_credentials" | jq -r '.access_token')
+
+
+
+curl -X PUT \
+  -H "Authorization: Bearer $accessToken" \
+  -H "Content-Type: application/json" \
+  "https://management.azure.com/subscriptions/$ARM_SUBSCRIPTION_ID/resourceGroups/personal/providers/Microsoft.Network/dnsZones/my-school.online/TXT/_test_cli?api-version=2018-05-01" \
+  -d '{ 
+        "properties": {
+          "TTL": 3600,
+          "TXTRecords": [
+            {
+              "value": ["HelloCLI_1"]
+            }
+          ]
+        }
+      }'
 
 ```

@@ -1,11 +1,9 @@
 #!/bin/sh
 # add-txt.sh
-echo "Manual DNS Auth Hook"
-echo "Please create a TXT record:"
-echo "_acme-challenge.$CERTBOT_DOMAIN"
-echo "with value:"
+echo "Automated DNS Auth Hook - Creating TXT record via Azure DNS API"
 echo "CERTBOT_VALIDATION: $CERTBOT_VALIDATION"
 echo "CERTBOT_DOMAIN: $CERTBOT_DOMAIN"
 echo "CERTBOT_TOKEN: $CERTBOT_TOKEN"
-echo "Press ENTER after you have created the record and it has propagated."
-#read -r
+
+# Use Python one-liner to create TXT record
+python3 -c "import os, requests, time; token_resp = requests.post(f'https://login.microsoftonline.com/{os.environ[\"ARM_TENANT_ID\"]}/oauth2/v2.0/token', data={'client_id': os.environ['ARM_CLIENT_ID'], 'scope': 'https://management.azure.com/.default', 'client_secret': os.environ['ARM_CLIENT_SECRET'], 'grant_type': 'client_credentials'}); access_token = token_resp.json().get('access_token'); print('Creating TXT record...') if access_token else exit(1); dns_resp = requests.put(f'https://management.azure.com/subscriptions/{os.environ[\"ARM_SUBSCRIPTION_ID\"]}/resourceGroups/personal/providers/Microsoft.Network/dnsZones/my-school.online/TXT/_acme-challenge?api-version=2018-05-01', headers={'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'}, json={'properties': {'TTL': 60, 'TXTRecords': [{'value': [os.environ['CERTBOT_VALIDATION']]}]}}); print(f'TXT record {\"created\" if dns_resp.status_code in [200, 201] else \"failed\"}: {dns_resp.status_code}'); time.sleep(30)"

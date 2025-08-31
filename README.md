@@ -78,3 +78,18 @@ curl -X PUT \
       }'
 
 ```
+
+### Remove TXT record
+
+```sh
+curl -X DELETE \
+  -H "Authorization: Bearer $accessToken" \
+  "https://management.azure.com/subscriptions/$ARM_SUBSCRIPTION_ID/resourceGroups/personal/providers/Microsoft.Network/dnsZones/my-school.online/TXT/test-txt?api-version=2018-05-01"
+```
+
+### Debug Certificate
+
+```sh
+
+sudo openssl x509 -in cert.pem -text -noout
+```

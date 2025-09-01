@@ -48,6 +48,62 @@ docker run --rm -it \
 
 ```
 
+#### Store cert in specific path
+```sh
+docker run --rm -it \
+  -v $(pwd)/cert:/etc/letsencrypt \
+  -v $(pwd)/cert:/var/lib/letsencrypt \
+  -v $(pwd)/cert/log:/var/log \
+  -v $(pwd)/hook/add-txt.sh:/add-txt.sh \
+  -v $(pwd)/hook/remove-txt.sh:/remove-txt.sh \
+  -e ARM_CLIENT_ID=$ARM_CLIENT_ID \
+  -e ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET \
+  -e ARM_TENANT_ID=$ARM_TENANT_ID \
+  -e ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID \
+  certbot/certbot certonly \
+  --test-cert \
+  --manual \
+  --manual-auth-hook "/add-txt.sh" \
+  --manual-cleanup-hook "/remove-txt.sh" \
+  --preferred-challenges dns \
+  -d "*.my-school.online" \
+  --agree-tos \
+  --no-eff-email \
+  -m xxxxxx@gmail.com \
+  -n \
+  --cert-path $(pwd)/cert/cert.pem \
+  --key-path $(pwd)/cert/privkey.pem \
+  --fullchain-path $(pwd)/cert/fullchain.pem \
+  --chain-path $(pwd)/cert/chain.pem
+```
+> Best Practice will be
+
+```sh
+docker run --rm -it \
+  -v $(pwd)/cert:/etc/letsencrypt \
+  -v $(pwd)/cert:/var/lib/letsencrypt \
+  -v $(pwd)/cert/log:/var/log \
+  -v $(pwd)/cert:/output \
+  -v $(pwd)/hook/add-txt.sh:/add-txt.sh \
+  -v $(pwd)/hook/remove-txt.sh:/remove-txt.sh \
+  -e ARM_CLIENT_ID=$ARM_CLIENT_ID \
+  -e ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET \
+  -e ARM_TENANT_ID=$ARM_TENANT_ID \
+  -e ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID \
+  certbot/certbot certonly \
+  --test-cert \
+  --manual \
+  --manual-auth-hook "/add-txt.sh" \
+  --manual-cleanup-hook "/remove-txt.sh" \
+  --preferred-challenges dns \
+  -d "*.my-school.online" \
+  --agree-tos \
+  --no-eff-email \
+  -m xxxxxx@gmail.com \
+  -n \
+  --deploy-hook "cp /etc/letsencrypt/live/*/cert.pem /output/ && cp /etc/letsencrypt/live/*/privkey.pem /output/ && cp /etc/letsencrypt/live/*/fullchain.pem /output/ && cp /etc/letsencrypt/live/*/chain.pem /output/"
+```
+
 ### Add a TXT record in azure dns zone
 
 ```sh
@@ -92,4 +148,67 @@ curl -X DELETE \
 ```sh
 
 sudo openssl x509 -in cert.pem -text -noout
+```
+
+### Renew certificates
+
+```sh
+# Renew all certificates that are close to expiry (dry run)
+docker run --rm -it \
+  -v $(pwd)/cert:/etc/letsencrypt \
+  -v $(pwd)/cert:/var/lib/letsencrypt \
+  -v $(pwd)/cert/log:/var/log \
+  -v $(pwd)/hook/add-txt.sh:/add-txt.sh \
+  -v $(pwd)/hook/remove-txt.sh:/remove-txt.sh \
+  -e ARM_CLIENT_ID=$ARM_CLIENT_ID \
+  -e ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET \
+  -e ARM_TENANT_ID=$ARM_TENANT_ID \
+  -e ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID \
+  certbot/certbot renew \
+  --test-cert \
+  --dry-run
+
+# Renew all certificates that are close to expiry (actual renewal)
+docker run --rm -it \
+  -v $(pwd)/cert:/etc/letsencrypt \
+  -v $(pwd)/cert:/var/lib/letsencrypt \
+  -v $(pwd)/cert/log:/var/log \
+  -v $(pwd)/hook/add-txt.sh:/add-txt.sh \
+  -v $(pwd)/hook/remove-txt.sh:/remove-txt.sh \
+  -e ARM_CLIENT_ID=$ARM_CLIENT_ID \
+  -e ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET \
+  -e ARM_TENANT_ID=$ARM_TENANT_ID \
+  -e ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID \
+  certbot/certbot renew \
+  --test-cert
+
+# Force renew specific certificate
+docker run --rm -it \
+  -v $(pwd)/cert:/etc/letsencrypt \
+  -v $(pwd)/cert:/var/lib/letsencrypt \
+  -v $(pwd)/cert/log:/var/log \
+  -v $(pwd)/hook/add-txt.sh:/add-txt.sh \
+  -v $(pwd)/hook/remove-txt.sh:/remove-txt.sh \
+  -e ARM_CLIENT_ID=$ARM_CLIENT_ID \
+  -e ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET \
+  -e ARM_TENANT_ID=$ARM_TENANT_ID \
+  -e ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID \
+  certbot/certbot renew \
+  --test-cert \
+  --cert-name my-school.online \
+  --force-renewal
+
+# List all certificates
+docker run --rm -it \
+  -v $(pwd)/cert:/etc/letsencrypt \
+  certbot/certbot certificates
+```
+
+### Automated renewal with cron
+
+```sh
+# Add to crontab for automatic renewal (runs twice daily)
+# Run: crontab -e
+# Add this line:
+0 */12 * * * cd /path/to/your/lets-encrypt && docker run --rm -v $(pwd)/cert:/etc/letsencrypt -v $(pwd)/cert:/var/lib/letsencrypt -v $(pwd)/cert/log:/var/log -v $(pwd)/hook/add-txt.sh:/add-txt.sh -v $(pwd)/hook/remove-txt.sh:/remove-txt.sh -e ARM_CLIENT_ID=$ARM_CLIENT_ID -e ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET -e ARM_TENANT_ID=$ARM_TENANT_ID -e ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID certbot/certbot renew --quiet
 ```

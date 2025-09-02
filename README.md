@@ -49,6 +49,39 @@ docker run --rm -it \
   --deploy-hook "/deploy-hook.sh"
 ```
 
+### Uploadto / Download from -  azure storage
+
+```sh
+# Set the subscription context after login
+az account set --subscription $ARM_SUBSCRIPTION_ID
+
+az login --service-principal \
+  --username $ARM_CLIENT_ID \
+  --password $ARM_CLIENT_SECRET \
+  --tenant $ARM_TENANT_ID
+
+
+# Set variables
+STORAGE_ACCOUNT="azstrogeu001"
+CONTAINER_NAME="certificates"
+LOCAL_PATH="$(pwd)/cert/letsencrypt"
+
+# Upload entire directory
+az storage blob upload-batch \
+  --account-name $STORAGE_ACCOUNT \
+  --destination $CONTAINER_NAME \
+  --source $LOCAL_PATH \
+  --pattern "*"
+
+
+# Download entire container contents
+az storage blob download-batch \
+  --account-name $STORAGE_ACCOUNT \
+  --destination $LOCAL_PATH \
+  --source $CONTAINER_NAME \
+  --pattern "*"
+```
+
 ### List all certificates
 ```sh
 docker run --rm -it \

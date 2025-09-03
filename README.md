@@ -23,7 +23,7 @@ docker run --rm certbot/certbot -h all
 ### Generate ssl/tls from let's encrypt staging env in non-interactive way.
 
 ```sh
-docker run --rm -it \
+docker run --rm -it \                                
   -v $(pwd)/cert/letsencrypt:/etc/letsencrypt \
   -v $(pwd)/cert/letsencrypt:/var/lib/letsencrypt \
   -v $(pwd)/cert/log:/var/log \
@@ -52,6 +52,9 @@ docker run --rm -it \
 ### Uploadto / Download from -  azure storage
 
 ```sh
+
+sudo chown -R samit:samit cert
+
 # Set the subscription context after login
 az account set --subscription $ARM_SUBSCRIPTION_ID
 
@@ -63,23 +66,51 @@ az login --service-principal \
 
 # Set variables
 STORAGE_ACCOUNT="azstrogeu001"
-CONTAINER_NAME="certificates"
-LOCAL_PATH="$(pwd)/cert/letsencrypt"
+CONTAINER_NAME="ssl"
+LOCAL_PATH="$(pwd)/cert"
 
-# Upload entire directory
+# Upload certificate from output directory
 az storage blob upload-batch \
   --account-name $STORAGE_ACCOUNT \
-  --destination $CONTAINER_NAME \
-  --source $LOCAL_PATH \
+  --destination $CONTAINER_NAME/output \
+  --source $LOCAL_PATH/output \
+  --overwrite \
   --pattern "*"
 
+# zip the letsencrypt folder
+tar -czf letsencrypt.tar.gz \
+  --preserve-permissions \
+  --same-owner \
+  cert/letsencrypt
 
-# Download entire container contents
+# Upload zip to blob store
+az storage blob upload \
+  --account-name $STORAGE_ACCOUNT \
+  --container-name $CONTAINER_NAME \
+  --file letsencrypt.tar.gz \
+  --name letsencrypt.tar.gz \
+  --overwrite
+
+
+# Download certificate to be used for somewhere
 az storage blob download-batch \
   --account-name $STORAGE_ACCOUNT \
-  --destination $LOCAL_PATH \
-  --source $CONTAINER_NAME \
+  --destination </path/to/dest> \
+  --source $CONTAINER_NAME/output \
   --pattern "*"
+
+# Download zip before any renewal process
+az storage blob download \
+  --account-name $STORAGE_ACCOUNT \
+  --container-name $CONTAINER_NAME \
+  --name letsencrypt.tar.gz \
+  --file letsencrypt.tar.gz
+
+# Uzip
+tar -xzf letsencrypt.tar.gz \
+  --preserve-permissions \
+  --same-owner \
+  cert/
 ```
 
 ### List all certificates

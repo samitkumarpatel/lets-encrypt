@@ -28,7 +28,7 @@ print('Removing TXT record...')
 
 # Delete DNS TXT record
 response = requests.delete(
-    f'https://management.azure.com/subscriptions/{os.environ['ARM_SUBSCRIPTION_ID']}/resourceGroups/personal/providers/Microsoft.Network/dnsZones/my-school.online/TXT/_acme-challenge?api-version=2018-05-01',
+    f'https://management.azure.com/subscriptions/{os.environ['ARM_SUBSCRIPTION_ID']}/resourceGroups/personal/providers/Microsoft.Network/dnsZones/{os.environ['CERTBOT_DOMAIN']}/TXT/_acme-challenge?api-version=2018-05-01',
     headers={'Authorization': f'Bearer {access_token}'}
 )
 

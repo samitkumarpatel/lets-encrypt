@@ -23,7 +23,7 @@ docker run --rm certbot/certbot -h all
 ### Generate ssl/tls from let's encrypt staging env in non-interactive way.
 
 ```sh
-docker run --rm -it \                                
+docker run --rm -it \
   -v $(pwd)/cert/letsencrypt:/etc/letsencrypt \
   -v $(pwd)/cert/letsencrypt:/var/lib/letsencrypt \
   -v $(pwd)/cert/log:/var/log \
@@ -35,6 +35,7 @@ docker run --rm -it \
   -e ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET \
   -e ARM_TENANT_ID=$ARM_TENANT_ID \
   -e ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID \
+  -e PFX_PASSWORD=helloWorld123 \
   certbot/certbot certonly \
   --test-cert \
   --manual \
@@ -49,7 +50,7 @@ docker run --rm -it \
   --deploy-hook "/deploy-hook.sh"
 ```
 
-### Uploadto / Download from -  azure storage
+### Upload to / Download from -  azure storage
 
 ```sh
 
@@ -63,6 +64,19 @@ az login --service-principal \
   --password $ARM_CLIENT_SECRET \
   --tenant $ARM_TENANT_ID
 
+# Generate pfx - as some of the SAS service need that
+#Why?
+
+#.pem files separate the private key and certificate chain.
+#Azure requires them bundled in a PKCS#12 (.pfx) archive.
+#The PFX contains:
+# Your private key (privkey.pem), Your certificate (cert.pem), The chain (chain.pem)
+
+openssl pkcs12 -export \
+  -out certificate.pfx \
+  -inkey privkey.pem \
+  -in cert.pem \
+  -certfile chain.pem
 
 # Set variables
 STORAGE_ACCOUNT="azstrogeu001"
@@ -153,10 +167,13 @@ docker run --rm -it \
   -e ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET \
   -e ARM_TENANT_ID=$ARM_TENANT_ID \
   -e ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID \
+  -e PFX_PASSWORD=helloWorld123 \
   certbot/certbot renew \
   --test-cert
 
 # Force renew specific certificate
+CERTBOT_DOMAIN=my-school.online
+
 docker run --rm -it \
   -v $(pwd)/cert/letsencrypt:/etc/letsencrypt \
   -v $(pwd)/cert/letsencrypt:/var/lib/letsencrypt \
@@ -169,9 +186,11 @@ docker run --rm -it \
   -e ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET \
   -e ARM_TENANT_ID=$ARM_TENANT_ID \
   -e ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID \
+  -e PFX_PASSWORD=helloWorld123 \
+  -e CERTBOT_DOMAIN=$CERTBOT_DOMAIN \
   certbot/certbot renew \
   --test-cert \
-  --cert-name my-school.online \
+  --cert-name $CERTBOT_DOMAIN \
   --force-renewal
 
 ```

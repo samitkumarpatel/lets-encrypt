@@ -3,18 +3,7 @@
 [letsencrypt automation - in different TechStack](https://letsencrypt.org/docs/client-options/).
 
 
-### dns
-```sh
-#Print ns
-dig NS my-school.online  +nssearch
-#OR
-nslookup -type=ns fullstack1o1.net
-
-#fetch TXT record
-dig +short TXT test-txt.fullstack1o1.net
-#OR
-nslookup -type=txt test-txt.fullstack1o1.net
-```
+lets-encrypt automation can be done by using a tool called `certbot`. It's a CLI and be install and use in any Operating system.
 
 ### help
 ```sh
@@ -195,4 +184,17 @@ docker run --rm -it \
   --cert-name $CERTBOT_DOMAIN \
   --force-renewal
 
+```
+
+### dns Query
+```sh
+#Print ns
+dig NS my-school.online  +nssearch
+#OR
+nslookup -type=ns fullstack1o1.net
+
+#fetch TXT record
+dig +short TXT test-txt.fullstack1o1.net
+#OR
+nslookup -type=txt test-txt.fullstack1o1.net
 ```

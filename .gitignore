@@ -2,3 +2,4 @@ cert/**
 cert/tmp
 cert/tmp/**
 *.gz
+**/.venv
